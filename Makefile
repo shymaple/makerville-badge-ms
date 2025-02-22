@@ -1,5 +1,5 @@
 all:
-	west build -b stamp_c3 app
+	west build -b esp32c3_devkitm app
 flash:
 	west flash
 monitor:
