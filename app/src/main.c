@@ -61,7 +61,7 @@ int display_text()
 
 	/* cfb_framebuffer_invert(display_dev); */
 
-	cfb_set_kerning(display_dev, 1);
+	cfb_set_kerning(display_dev, 0);
   cfb_print(display_dev,
             "Anuj D",
             0, 0);
