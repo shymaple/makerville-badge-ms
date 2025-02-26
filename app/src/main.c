@@ -8,6 +8,7 @@
 
 LOG_MODULE_REGISTER(BADGE, LOG_LEVEL_DBG);
 const struct device *display_dev;
+struct k_work button_work;
 
 #define SW0_NODE	DT_ALIAS(sw0)
 #if !DT_NODE_HAS_STATUS_OKAY(SW0_NODE)
@@ -61,7 +62,7 @@ int display_init()
   /*   if (idx==2) */
   /*     break; */
 	/* } */
-  cfb_framebuffer_set_font(display_dev, 0);
+  cfb_framebuffer_set_font(display_dev, 1);
 
 	printf("x_res %d, y_res %d, ppt %d, rows %d, cols %d\n",
 	       x_res,
@@ -73,26 +74,37 @@ int display_init()
 	/* cfb_framebuffer_invert(display_dev); */
 
 	cfb_set_kerning(display_dev, 0);
+}
+void display_text(char* text)
+{
   cfb_print(display_dev,
-            "ANUJ        DESHPANDE",
+            text,
             0, 0);
   cfb_framebuffer_finalize(display_dev);
 }
 
-int count = 0;
+
 void button_pressed(const struct device *dev, struct gpio_callback *cb,
                     uint32_t pins)
 {
-	printk("Button pressed at %" PRIu32 "\n", k_cycle_get_32());
-  /* char text[32]; */
-  /* sprintf(text,"Anuj %d",count++); */
-  /* display_text(text); */
+  k_work_submit(&button_work);
 }
 
+int count = 0;
+void button_work_cb(struct k_work *work)
+{
+	LOG_INF("Button pressed");
+  char text[32];
+  sprintf(text,"Count %d",count++);
+  display_text(text);
+	return;
+}
 
 int main(void)
 {
   int ret;
+  k_work_init(&button_work, button_work_cb);
+
   display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
   if (!device_is_ready(display_dev)) {
     printk("Display_Device %s not ready\n", display_dev->name);
@@ -101,29 +113,28 @@ int main(void)
 
   LOG_INF("SSD1306 device found\n");
   display_init();
+  display_text("MKRV!");
 
 	if (!gpio_is_ready_dt(&button)) {
 		LOG_INF("Error: button device %s is not ready\n",
 		       button.port->name);
 	}
   /* TODO Uncommenting everything below this causes issues in I2C */
-	/* ret = gpio_pin_configure_dt(&button, GPIO_INPUT); */
-	/* if (ret != 0) { */
-	/* 	LOG_INF("Error %d: failed to configure %s pin %d\n", */
-	/* 	       ret, button.port->name, button.pin); */
-	/* } */
-	/* ret = gpio_pin_interrupt_configure_dt(&button, */
-  /*                                       GPIO_INT_EDGE_TO_ACTIVE); */
-	/* if (ret != 0) { */
-	/* 	LOG_INF("Error %d: failed to configure interrupt on %s pin %d\n", */
-  /*          ret, button.port->name, button.pin); */
-	/* 	return 0; */
-	/* } */
-	/* gpio_init_callback(&button_cb_data, button_pressed, BIT(button.pin)); */
-	/* gpio_add_callback(button.port, &button_cb_data); */
-	/* LOG_INF("Set up button at %s pin %d\n", button.port->name, button.pin); */
-
-  /* k_msleep(1000); */
+	ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
+	if (ret != 0) {
+		LOG_INF("Error %d: failed to configure %s pin %d\n",
+		       ret, button.port->name, button.pin);
+	}
+	ret = gpio_pin_interrupt_configure_dt(&button,
+                                        GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret != 0) {
+		LOG_INF("Error %d: failed to configure interrupt on %s pin %d\n",
+           ret, button.port->name, button.pin);
+		return 0;
+	}
+	gpio_init_callback(&button_cb_data, button_pressed, BIT(button.pin));
+	gpio_add_callback(button.port, &button_cb_data);
+	LOG_INF("Set up button at %s pin %d\n", button.port->name, button.pin);
 
   return 0;
 }
