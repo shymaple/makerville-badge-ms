@@ -74,6 +74,7 @@ int display_init()
 	/* cfb_framebuffer_invert(display_dev); */
 
 	cfb_set_kerning(display_dev, 0);
+  return 0;
 }
 void display_text(char* text)
 {
@@ -90,13 +91,21 @@ void button_pressed(const struct device *dev, struct gpio_callback *cb,
   k_work_submit(&button_work);
 }
 
-int count = 0;
+int index;
+#define MAX_STRINGS 3
+char text[MAX_STRINGS][12] = {
+  "ANUJ     ",
+  "LOVES    ",
+  "MKRV     "
+};
+
 void button_work_cb(struct k_work *work)
 {
 	LOG_INF("Button pressed");
-  char text[32];
-  sprintf(text,"Count %d",count++);
-  display_text(text);
+  display_text(text[index]);
+  index = index + 1;
+  if (index == MAX_STRINGS)
+    index = 0;
 	return;
 }
 
@@ -113,7 +122,7 @@ int main(void)
 
   LOG_INF("SSD1306 device found\n");
   display_init();
-  display_text("MKRV!");
+  display_text("Pres Btn");
 
 	if (!gpio_is_ready_dt(&button)) {
 		LOG_INF("Error: button device %s is not ready\n",
