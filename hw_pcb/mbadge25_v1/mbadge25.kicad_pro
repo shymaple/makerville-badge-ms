@@ -569,6 +569,12 @@
       "/GND": [
         "GND"
       ],
+      "/IO18.USBN": [
+        "USB-"
+      ],
+      "/IO19.USBP": [
+        "USB+"
+      ],
       "/SCL": [
         "SCL"
       ],
@@ -585,6 +591,9 @@
         "VBUS"
       ],
       "/VBUS": [
+        "VBUS"
+      ],
+      "/VUSB": [
         "VBUS"
       ]
     },
