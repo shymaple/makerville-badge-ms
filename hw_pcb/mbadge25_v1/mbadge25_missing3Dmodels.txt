@@ -1,0 +1,12 @@
+### Missing 3D models - created on 2025-03-01 13:51
+### Printed by checking_3D_models plugin
+Board file: /home/anool/projects-git/MakerVille/makerville-badge/hw_pcb/mbadge25/mbadge25.kicad_pcb
+3D missing models written to:
+/home/anool/projects-git/MakerVille/makerville-badge/hw_pcb/mbadge25/mbadge25_missing3Dmodels.txt
+-------
+('C1', '${KISYS3DMOD}/Capacitor_SMD.3dshapes/C_0805_2012Metric.wrl')
+('U1', '${KICAD8_3RD_PARTY}/3dmodels/com_github_espressif_kicad-libraries/espressif.3dshapes/ESP32-C3-MINI-1.STEP')
+('C2', '${KICAD6_3DMODEL_DIR}/Capacitor_SMD.3dshapes/CP_Elec_6.3x5.9.wrl')
+-------
+NUM of 3D missing models:3
+checked extensions ['.stp', '.step', '.stpZ']
