@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "mbadge25")
-		(date "2025-03-19")
+		(date "2025-03-20")
 		(rev "v1")
 		(company "MakerVille")
 		(comment 1 "minimalistic badge for MakerVille 2025")
@@ -7480,7 +7480,7 @@
 			)
 		)
 	)
-	(label "IO2"
+	(label "IO2.SAO"
 		(at 222.25 55.88 0)
 		(effects
 			(font
@@ -7648,7 +7648,7 @@
 		)
 		(uuid "6bc339fa-8e85-4f8a-b1a9-74d0acbfd794")
 	)
-	(label "IO2"
+	(label "IO2.SAO"
 		(at 121.92 151.13 180)
 		(effects
 			(font
@@ -7796,7 +7796,7 @@
 		)
 		(uuid "a1badf92-6f6f-4479-ad00-d1c007e6369d")
 	)
-	(label "IO3"
+	(label "IO3.SAO"
 		(at 121.92 153.67 180)
 		(effects
 			(font
@@ -7892,7 +7892,7 @@
 			)
 		)
 	)
-	(label "IO3"
+	(label "IO3.SAO"
 		(at 273.05 55.88 180)
 		(effects
 			(font
@@ -8566,71 +8566,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Library_SYM_mbadge25:Conn_01x01_Pin")
-		(at 127 166.37 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board yes)
-		(dnp no)
-		(uuid "29603bca-b9d6-45cc-ad7e-77c4c2a1455c")
-		(property "Reference" "J19"
-			(at 128.778 166.37 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "Conn_IO8.SCL"
-			(at 126.365 163.83 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "Library_FP_mbadge25:PinHeader_1x01_P1.27mm_Vertical"
-			(at 127 166.37 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 127 166.37 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Generic connector, single row, 01x01, script generated"
-			(at 127 166.37 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "0a95772c-0bcb-4e52-b474-19e345b73c82")
-		)
-		(instances
-			(project "mbadge25"
-				(path "/78768b1b-0b2e-4050-96a6-9a18a20b8e29"
-					(reference "J19")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Library_SYM_mbadge25:Conn_01x01")
 		(at 82.55 21.59 90)
 		(unit 1)
@@ -9295,71 +9230,6 @@
 			(project "mbadge25"
 				(path "/78768b1b-0b2e-4050-96a6-9a18a20b8e29"
 					(reference "J20")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Library_SYM_mbadge25:Conn_01x01_Pin")
-		(at 127 163.83 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board yes)
-		(dnp no)
-		(uuid "5c878b2f-b1c8-461c-89f9-52a3762e0f43")
-		(property "Reference" "J18"
-			(at 128.778 163.83 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "Conn_IO7.SDA"
-			(at 126.365 161.29 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "Library_FP_mbadge25:PinHeader_1x01_P1.27mm_Vertical"
-			(at 127 163.83 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 127 163.83 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Generic connector, single row, 01x01, script generated"
-			(at 127 163.83 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "1671c88a-9d5c-4cc4-ab19-26d47a8f5fd4")
-		)
-		(instances
-			(project "mbadge25"
-				(path "/78768b1b-0b2e-4050-96a6-9a18a20b8e29"
-					(reference "J18")
 					(unit 1)
 				)
 			)
@@ -11363,71 +11233,6 @@
 			(project "mbadge25"
 				(path "/78768b1b-0b2e-4050-96a6-9a18a20b8e29"
 					(reference "R7")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Library_SYM_mbadge25:Conn_01x01_Pin")
-		(at 127 161.29 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board yes)
-		(dnp no)
-		(uuid "e4425763-4385-4142-b3dc-86959c555142")
-		(property "Reference" "J17"
-			(at 128.778 161.29 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "Conn_IO6.RGB"
-			(at 126.365 158.75 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "Library_FP_mbadge25:PinHeader_1x01_P1.27mm_Vertical"
-			(at 127 161.29 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 127 161.29 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Generic connector, single row, 01x01, script generated"
-			(at 127 161.29 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "a10f9e69-c5e2-4526-8ffc-6bb35e67ab97")
-		)
-		(instances
-			(project "mbadge25"
-				(path "/78768b1b-0b2e-4050-96a6-9a18a20b8e29"
-					(reference "J17")
 					(unit 1)
 				)
 			)

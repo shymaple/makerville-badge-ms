@@ -37,9 +37,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 0.8,
-          "height": 1.27,
-          "width": 2.54
+          "drill": 0.5,
+          "height": 0.5,
+          "width": 0.5
         },
         "silk_line_width": 0.1,
         "silk_text_italic": false,
@@ -51,7 +51,18 @@
           "min_clearance": 0.5
         }
       },
-      "diff_pair_dimensions": [],
+      "diff_pair_dimensions": [
+        {
+          "gap": 0.0,
+          "via_gap": 0.0,
+          "width": 0.0
+        },
+        {
+          "gap": 0.3,
+          "via_gap": 0.0,
+          "width": 0.3
+        }
+      ],
       "drc_exclusions": [],
       "meta": {
         "version": 2
@@ -179,7 +190,14 @@
           "td_width_to_size_filter_ratio": 0.9
         }
       ],
-      "track_widths": [],
+      "track_widths": [
+        0.0,
+        0.25,
+        0.3,
+        0.5,
+        0.75,
+        1.0
+      ],
       "tuning_pattern_settings": {
         "diff_pair_defaults": {
           "corner_radius_percentage": 80,
@@ -206,7 +224,12 @@
           "spacing": 0.6
         }
       },
-      "via_dimensions": [],
+      "via_dimensions": [
+        {
+          "diameter": 0.0,
+          "drill": 0.0
+        }
+      ],
       "zones_allow_external_fillets": false
     },
     "ipc2581": {
@@ -471,90 +494,108 @@
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 2147483647,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
-        "track_width": 0.2,
+        "track_width": 0.25,
         "via_diameter": 0.6,
         "via_drill": 0.3,
         "wire_width": 6
       },
       {
         "bus_width": 12,
+        "clearance": 0.2,
         "line_style": 0,
         "name": "3V3",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "pcb_color": "rgb(128, 0, 0)",
         "priority": 5,
         "schematic_color": "rgb(128, 0, 0)",
+        "track_width": 0.5,
         "wire_width": 10
       },
       {
         "bus_width": 12,
+        "clearance": 0.2,
         "line_style": 0,
         "name": "5V0",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "pcb_color": "rgb(161, 0, 0)",
         "priority": 6,
         "schematic_color": "rgb(161, 0, 0)",
+        "track_width": 0.5,
         "wire_width": 10
       },
       {
         "bus_width": 12,
+        "clearance": 0.2,
         "line_style": 0,
         "name": "GND",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "pcb_color": "rgb(0, 128, 0)",
         "priority": 4,
         "schematic_color": "rgb(0, 128, 0)",
+        "track_width": 0.5,
         "wire_width": 10
       },
       {
         "bus_width": 12,
+        "clearance": 0.2,
         "line_style": 0,
         "name": "SCL",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 0,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.25,
         "wire_width": 6
       },
       {
         "bus_width": 12,
+        "clearance": 0.2,
         "line_style": 0,
         "name": "SDA",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 1,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.25,
         "wire_width": 6
       },
       {
         "bus_width": 12,
+        "clearance": 0.2,
         "line_style": 0,
         "name": "USB+",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 3,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.25,
         "wire_width": 6
       },
       {
         "bus_width": 12,
+        "clearance": 0.2,
         "line_style": 0,
         "name": "USB-",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 2,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.25,
         "wire_width": 6
       },
       {
         "bus_width": 12,
+        "clearance": 0.2,
         "line_style": 0,
         "name": "VBUS",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "pcb_color": "rgb(255, 0, 0)",
         "priority": 8,
         "schematic_color": "rgb(255, 0, 0)",
+        "track_width": 0.5,
         "wire_width": 10
       },
       {
         "bus_width": 12,
+        "clearance": 0.2,
         "line_style": 0,
         "name": "VUSB",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "pcb_color": "rgb(192, 0, 0)",
         "priority": 7,
         "schematic_color": "rgb(192, 0, 0)",
+        "track_width": 0.5,
         "wire_width": 10
       }
     ],
@@ -605,6 +646,38 @@
       {
         "netclass": "VBUS",
         "pattern": "/VBUS"
+      },
+      {
+        "netclass": "SCL",
+        "pattern": "/SCL"
+      },
+      {
+        "netclass": "SDA",
+        "pattern": "/SDA"
+      },
+      {
+        "netclass": "USB-",
+        "pattern": "/USB-"
+      },
+      {
+        "netclass": "USB+",
+        "pattern": "/USB+"
+      },
+      {
+        "netclass": "3V3",
+        "pattern": "3V3"
+      },
+      {
+        "netclass": "5V0",
+        "pattern": "5V0"
+      },
+      {
+        "netclass": "VUSB",
+        "pattern": "VUSB"
+      },
+      {
+        "netclass": "5V0",
+        "pattern": "/5V0"
       }
     ]
   },
