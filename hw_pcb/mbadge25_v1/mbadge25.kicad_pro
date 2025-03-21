@@ -689,7 +689,7 @@
       "plot": "",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "../../hw_cad/mbadge25.step",
       "svg": "",
       "vrml": ""
     },
