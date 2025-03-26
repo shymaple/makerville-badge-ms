@@ -300,14 +300,14 @@
 			(polyline
 				(pts
 					(xy -1.905 0.2794) (xy 1.905 0.2794) (xy 1.905 1.3462) (xy -1.905 1.3462) (xy -1.905 0.2794) (xy -1.8034 0.381)
-					(xy -1.8034 1.2446) (xy 1.8034 1.2446) (xy 1.8034 0.381) (xy -1.8034 0.381) (xy -1.905 0.2794)
+					(xy -1.8034 1.27) (xy 1.8034 1.27) (xy 1.8034 0.381) (xy -1.8034 0.381) (xy -1.905 0.2794)
 				)
 				(stroke
 					(width 0.254)
-					(type default)
+					(type solid)
 				)
 				(fill
-					(type outline)
+					(type background)
 				)
 			)
 			(rectangle
@@ -496,8 +496,8 @@
 				(start -1.27 1.27)
 				(end 1.27 -1.27)
 				(stroke
-					(width 0.254)
-					(type default)
+					(width 0.508)
+					(type solid)
 				)
 				(fill
 					(type background)
@@ -727,8 +727,8 @@
 				(start -1.27 1.27)
 				(end 1.27 -3.81)
 				(stroke
-					(width 0.254)
-					(type default)
+					(width 0.508)
+					(type solid)
 				)
 				(fill
 					(type background)
@@ -869,8 +869,8 @@
 				(start -1.27 3.81)
 				(end 1.27 -3.81)
 				(stroke
-					(width 0.254)
-					(type default)
+					(width 0.508)
+					(type solid)
 				)
 				(fill
 					(type background)
@@ -1040,8 +1040,8 @@
 				(start -1.27 3.81)
 				(end 1.27 -6.35)
 				(stroke
-					(width 0.254)
-					(type default)
+					(width 0.508)
+					(type solid)
 				)
 				(fill
 					(type background)
@@ -1240,8 +1240,8 @@
 				(start -1.27 8.89)
 				(end 1.27 -11.43)
 				(stroke
-					(width 0.254)
-					(type default)
+					(width 0.508)
+					(type solid)
 				)
 				(fill
 					(type background)
@@ -1490,8 +1490,8 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(property "Reference" "J"
-			(at 2.54 3.048 0)
+		(property "Reference" "J3"
+			(at 0 7.112 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1499,14 +1499,14 @@
 			)
 		)
 		(property "Value" "OLED_I2C"
-			(at 5.842 -4.064 0)
+			(at 18.034 -0.762 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Library_FP_mbadge25:OLED_128x32"
 			(at 0 0 0)
 			(effects
 				(font
@@ -1561,15 +1561,15 @@
 				)
 				(fill
 					(type color)
-					(color 0 0 255 0.3)
+					(color 0 255 254 0.3)
 				)
 			)
 			(rectangle
 				(start -1.27 3.81)
 				(end 1.27 -6.35)
 				(stroke
-					(width 0.254)
-					(type default)
+					(width 0.508)
+					(type solid)
 				)
 				(fill
 					(type background)
@@ -2230,8 +2230,8 @@
 				(start -1.27 8.89)
 				(end 1.27 -11.43)
 				(stroke
-					(width 0.254)
-					(type default)
+					(width 0.508)
+					(type solid)
 				)
 				(fill
 					(type background)
@@ -3053,20 +3053,18 @@
 				)
 			)
 		)
-		(symbol "ESP32-C3-MINI-1_0_1"
+		(symbol "ESP32-C3-MINI-1_1_1"
 			(rectangle
 				(start -25.4 25.4)
 				(end 25.4 -25.4)
 				(stroke
-					(width 0)
-					(type default)
+					(width 0.508)
+					(type solid)
 				)
 				(fill
 					(type background)
 				)
 			)
-		)
-		(symbol "ESP32-C3-MINI-1_1_1"
 			(pin input line
 				(at -27.94 22.86 0)
 				(length 2.54)
@@ -4143,17 +4141,15 @@
 			)
 		)
 		(symbol "R_1_1"
-			(polyline
-				(pts
-					(xy -1.524 -3.429) (xy 1.524 -3.429) (xy 1.524 3.429) (xy -1.524 3.429) (xy -1.524 -3.429) (xy -1.27 -3.175)
-					(xy -1.27 3.175) (xy 1.27 3.175) (xy 1.27 -3.175) (xy -1.27 -3.175) (xy -1.524 -3.429)
-				)
+			(rectangle
+				(start -1.27 3.302)
+				(end 1.27 -3.302)
 				(stroke
-					(width 0.254)
-					(type default)
+					(width 0.508)
+					(type solid)
 				)
 				(fill
-					(type outline)
+					(type background)
 				)
 			)
 			(pin passive line
@@ -4950,20 +4946,18 @@
 				(hide yes)
 			)
 		)
-		(symbol "Simple_Addon_v2_0_1"
+		(symbol "Simple_Addon_v2_1_1"
 			(rectangle
 				(start -7.62 8.89)
 				(end 7.62 -8.89)
 				(stroke
-					(width 0)
+					(width 0.508)
 					(type solid)
 				)
 				(fill
-					(type none)
+					(type background)
 				)
 			)
-		)
-		(symbol "Simple_Addon_v2_1_1"
 			(pin input line
 				(at -5.08 13.97 270)
 				(length 5.08)
@@ -5622,17 +5616,6 @@
 			)
 		)
 		(symbol "USB4105-GF-A_0_0"
-			(rectangle
-				(start -15.24 12.7)
-				(end 15.24 -25.4)
-				(stroke
-					(width 0.254)
-					(type default)
-				)
-				(fill
-					(type background)
-				)
-			)
 			(pin power_in line
 				(at -12.7 -30.48 90)
 				(length 5.08)
@@ -6112,6 +6095,19 @@
 				)
 			)
 		)
+		(symbol "USB4105-GF-A_1_0"
+			(rectangle
+				(start -15.24 12.7)
+				(end 15.24 -25.4)
+				(stroke
+					(width 0.508)
+					(type solid)
+				)
+				(fill
+					(type background)
+				)
+			)
+		)
 		(embedded_fonts no)
 	)
 	(symbol "USB_C_Receptacle_USB2.0_16P"
@@ -6295,17 +6291,6 @@
 			)
 		)
 		(symbol "USB_C_Receptacle_USB2.0_16P_0_1"
-			(rectangle
-				(start -10.16 17.78)
-				(end 10.16 -17.78)
-				(stroke
-					(width 0.254)
-					(type default)
-				)
-				(fill
-					(type background)
-				)
-			)
 			(polyline
 				(pts
 					(xy -8.89 -3.81) (xy -8.89 3.81)
@@ -6496,6 +6481,17 @@
 			)
 		)
 		(symbol "USB_C_Receptacle_USB2.0_16P_1_1"
+			(rectangle
+				(start -10.16 17.78)
+				(end 10.16 -17.78)
+				(stroke
+					(width 0.508)
+					(type solid)
+				)
+				(fill
+					(type background)
+				)
+			)
 			(pin passive line
 				(at -7.62 -22.86 90)
 				(length 5.08)
@@ -6978,19 +6974,19 @@
 					(type none)
 				)
 			)
+		)
+		(symbol "WS2812B_1_1"
 			(rectangle
-				(start 5.08 5.08)
-				(end -5.08 -5.08)
+				(start -5.08 5.08)
+				(end 5.08 -5.08)
 				(stroke
-					(width 0.254)
-					(type default)
+					(width 0.508)
+					(type solid)
 				)
 				(fill
 					(type background)
 				)
 			)
-		)
-		(symbol "WS2812B_1_1"
 			(pin input line
 				(at -7.62 0 0)
 				(length 2.54)
@@ -7131,20 +7127,18 @@
 				(hide yes)
 			)
 		)
-		(symbol "XC6220B331MR_0_1"
+		(symbol "XC6220B331MR_1_1"
 			(rectangle
 				(start -7.62 5.08)
 				(end 7.62 -5.08)
 				(stroke
-					(width 0.254)
-					(type default)
+					(width 0.508)
+					(type solid)
 				)
 				(fill
 					(type background)
 				)
 			)
-		)
-		(symbol "XC6220B331MR_1_1"
 			(pin power_in line
 				(at -12.7 2.54 0)
 				(length 5.08)

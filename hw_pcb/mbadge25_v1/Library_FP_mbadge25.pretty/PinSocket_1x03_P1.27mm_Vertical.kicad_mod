@@ -235,18 +235,19 @@
 			)
 		)
 	)
-	(pad "1" thru_hole rect
+	(pad "1" thru_hole roundrect
 		(at 0 0)
 		(size 1 1)
-		(drill 0.7)
+		(drill 0.65)
 		(layers "*.Cu" "*.Mask")
 		(remove_unused_layers no)
+		(roundrect_rratio 0.25)
 		(uuid "b3b421cf-97cb-48cc-8a15-1795cf3fbe52")
 	)
 	(pad "2" thru_hole oval
 		(at 0 1.27)
 		(size 1 1)
-		(drill 0.7)
+		(drill 0.65)
 		(layers "*.Cu" "*.Mask")
 		(remove_unused_layers no)
 		(uuid "4807a624-3b34-4414-b89b-dbf23c8adc25")
@@ -254,7 +255,7 @@
 	(pad "3" thru_hole oval
 		(at 0 2.54)
 		(size 1 1)
-		(drill 0.7)
+		(drill 0.65)
 		(layers "*.Cu" "*.Mask")
 		(remove_unused_layers no)
 		(uuid "1e066366-51e9-4e7f-b535-7b3e028d6a10")
