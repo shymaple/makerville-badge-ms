@@ -88,7 +88,14 @@ void display_text(char* text)
 void button_pressed(const struct device *dev, struct gpio_callback *cb,
                     uint32_t pins)
 {
-  k_work_submit(&button_work);
+	int val = gpio_pin_get_dt(&button);
+    if (val == 1) {
+        // Button pressed (assuming active low)
+		  k_work_submit(&button_work);
+    } else {
+        // Button released
+    }
+
 }
 
 int index;
@@ -101,7 +108,6 @@ char text[MAX_STRINGS][12] = {
 
 void button_work_cb(struct k_work *work)
 {
-	LOG_INF("Button pressed");
   display_text(text[index]);
   index = index + 1;
   if (index == MAX_STRINGS)
