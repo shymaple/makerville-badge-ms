@@ -62,7 +62,7 @@ int display_init()
   /*   if (idx==2) */
   /*     break; */
 	/* } */
-  cfb_framebuffer_set_font(display_dev, 1);
+  cfb_framebuffer_set_font(display_dev, 2);
 
 	printf("x_res %d, y_res %d, ppt %d, rows %d, cols %d\n",
 	       x_res,
@@ -76,12 +76,26 @@ int display_init()
 	cfb_set_kerning(display_dev, 0);
   return 0;
 }
+
 void display_text(char* text)
 {
-  cfb_print(display_dev,
-            text,
-            0, 0);
-  cfb_framebuffer_finalize(display_dev);
+	int x_res = cfb_get_display_parameter(display_dev, CFB_DISPLAY_WIDTH);
+    int text_len = strlen(text);
+    int char_width = 20; // Approximate width of each character
+    int total_width = text_len * char_width;
+    int x_pos = x_res; // Start from right edge
+    
+    // Clear the display first
+    cfb_framebuffer_clear(display_dev, true);
+    
+    // Scroll the text from right to left
+    while (x_pos > -total_width) {
+        cfb_framebuffer_clear(display_dev, true);
+        cfb_print(display_dev, text, x_pos, 0);
+        cfb_framebuffer_finalize(display_dev);
+        x_pos -= 5; // Move one pixel left
+        k_msleep(1); // Adjust speed of scrolling
+    }
 }
 
 
@@ -100,15 +114,18 @@ void button_pressed(const struct device *dev, struct gpio_callback *cb,
 
 int index;
 #define MAX_STRINGS 3
-char text[MAX_STRINGS][12] = {
-  "ANUJ     ",
-  "LOVES    ",
-  "MKRV     "
+char text[MAX_STRINGS][32]= {
+  "Anuj Deshpande",
+  "anujdeshpande.com",
+  "Interested in developer tools!"
 };
 
 void button_work_cb(struct k_work *work)
 {
+  LOG_INF("Button pressed");
+  cfb_framebuffer_set_font(display_dev, 2);
   display_text(text[index]);
+
   index = index + 1;
   if (index == MAX_STRINGS)
     index = 0;
@@ -128,7 +145,7 @@ int main(void)
 
   LOG_INF("SSD1306 device found\n");
   display_init();
-  display_text("Pres Btn");
+  display_text("Makerville Badge! Press button to change text");
 
 	if (!gpio_is_ready_dt(&button)) {
 		LOG_INF("Error: button device %s is not ready\n",
