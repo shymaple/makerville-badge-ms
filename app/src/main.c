@@ -10,6 +10,20 @@ LOG_MODULE_REGISTER(BADGE, LOG_LEVEL_DBG);
 const struct device *display_dev;
 struct k_work button_work;
 
+// Define work queue for display operations
+K_THREAD_STACK_DEFINE(display_stack, 1024);
+struct k_work_q display_work_q;
+
+// Structure to hold display text work
+struct display_work_item {
+    struct k_work work;
+    char text[32];
+    bool update_text;
+};
+
+// Create a single work item that we'll reuse
+static struct display_work_item display_item;
+
 #define SW0_NODE	DT_ALIAS(sw0)
 #if !DT_NODE_HAS_STATUS_OKAY(SW0_NODE)
 #error "Unsupported board: sw0 devicetree alias is not defined"
@@ -77,27 +91,52 @@ int display_init()
   return 0;
 }
 
-void display_text(char* text)
+void display_work_handler(struct k_work *work)
 {
-	int x_res = cfb_get_display_parameter(display_dev, CFB_DISPLAY_WIDTH);
-    int text_len = strlen(text);
+    struct display_work_item *display_item = CONTAINER_OF(work, struct display_work_item, work);
+    int x_res = cfb_get_display_parameter(display_dev, CFB_DISPLAY_WIDTH);
+    int text_len = strlen(display_item->text);
     int char_width = 20; // Approximate width of each character
     int total_width = text_len * char_width;
     int x_pos = x_res; // Start from right edge
     
-    // Clear the display first
-    cfb_framebuffer_clear(display_dev, true);
-    
-    // Scroll the text from right to left
-    while (x_pos > -total_width) {
+    while (1) {
+        // Clear the display first
         cfb_framebuffer_clear(display_dev, true);
-        cfb_print(display_dev, text, x_pos, 0);
-        cfb_framebuffer_finalize(display_dev);
-        x_pos -= 5; // Move one pixel left
-        k_msleep(1); // Adjust speed of scrolling
+        
+        // Scroll the text from right to left
+        while (x_pos > -total_width) {
+            cfb_framebuffer_clear(display_dev, true);
+            cfb_print(display_dev, display_item->text, x_pos, 0);
+            cfb_framebuffer_finalize(display_dev);
+            x_pos -= 5; // Move one pixel left
+            k_msleep(1); // Adjust speed of scrolling
+        }
+        
+        // Reset position for next iteration
+        x_pos = x_res;
+        
+        // If text was updated, break the loop to restart with new text
+        if (display_item->update_text) {
+            display_item->update_text = false;
+            break;
+        }
     }
+    
+    // Resubmit the work to continue scrolling
+    k_work_submit_to_queue(&display_work_q, &display_item->work);
 }
 
+void display_text(char* text)
+{
+    // Copy the text to the work item
+    strncpy(display_item.text, text, sizeof(display_item.text) - 1);
+    display_item.text[sizeof(display_item.text) - 1] = '\0';
+    display_item.update_text = true;
+    
+    // Submit the work to the display queue
+    k_work_submit_to_queue(&display_work_q, &display_item.work);
+}
 
 void button_pressed(const struct device *dev, struct gpio_callback *cb,
                     uint32_t pins)
@@ -136,6 +175,15 @@ int main(void)
 {
   int ret;
   k_work_init(&button_work, button_work_cb);
+
+  // Initialize display work queue
+  k_work_queue_init(&display_work_q);
+  k_work_queue_start(&display_work_q, display_stack, K_THREAD_STACK_SIZEOF(display_stack),
+                    K_PRIO_COOP(7), NULL);
+  
+  // Initialize display work item
+  k_work_init(&display_item.work, display_work_handler);
+  display_item.update_text = false;
 
   display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
   if (!device_is_ready(display_dev)) {
