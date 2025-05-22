@@ -40,3 +40,13 @@ box_shell_base_lid(box_sz,rsides=6,wall_sides=1.6,wall_top=2,base_height=3,rim_h
     translate([-16,-13.5,0])box_part(TOP) box_cut() cyl(d=5,h=15,anchor=CENTER); 
 
 }
+
+// buttons
+module push_button(){
+cylinder(4,4/2,4/2);
+cylinder(0.5,5.6/2,5.6/2);
+}
+
+translate([50,0,0])push_button();
+translate([40,0,0])push_button();
+
