@@ -100,17 +100,21 @@ void display_work_handler(struct k_work *work)
     int total_width = text_len * char_width;
     int x_pos = x_res; // Start from right edge
     
+    // Clear the display once at the start
+    cfb_framebuffer_clear(display_dev, true);
+    
     while (1) {
-        // Clear the display first
-        cfb_framebuffer_clear(display_dev, true);
+        // Only clear the area that needs updating
+        cfb_framebuffer_clear(display_dev, false);
         
         // Scroll the text from right to left
         while (x_pos > -total_width) {
-            cfb_framebuffer_clear(display_dev, true);
+            // Clear only the area that needs updating
+            cfb_framebuffer_clear(display_dev, false);
             cfb_print(display_dev, display_item->text, x_pos, 0);
             cfb_framebuffer_finalize(display_dev);
-            x_pos -= 5; // Move one pixel left
-            k_msleep(1); // Adjust speed of scrolling
+            x_pos -= 4; // Faster scroll speed
+            k_msleep(10); // Shorter delay between updates
         }
         
         // Reset position for next iteration
@@ -119,6 +123,8 @@ void display_work_handler(struct k_work *work)
         // If text was updated, break the loop to restart with new text
         if (display_item->update_text) {
             display_item->update_text = false;
+            // Clear the display for the new text
+            cfb_framebuffer_clear(display_dev, true);
             break;
         }
     }
