@@ -39,9 +39,6 @@ int display_init()
 	uint16_t y_res;
 	uint16_t rows;
 	uint8_t ppt;
-	uint8_t font_width;
-	uint8_t font_height;
-
 
 	if (display_set_pixel_format(display_dev, PIXEL_FORMAT_MONO10) != 0) {
 		if (display_set_pixel_format(display_dev, PIXEL_FORMAT_MONO01) != 0) {
