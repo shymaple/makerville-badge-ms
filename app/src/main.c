@@ -12,10 +12,20 @@ static const struct smf_state badge_states[];
 enum badge_state {
   BADGE_STATE_INIT,
   BADGE_STATE_IDLE,
+  BADGE_STATE_ERROR,
 };
+
+enum badge_event {
+  BADGE_EVENT_DISPLAY_ERROR,
+  BADGE_EVENT_SHORT_BUTTON_PRESS,
+  BADGE_EVENT_LONG_BUTTON_PRESS,
+};
+
+K_MSGQ_DEFINE(event_msgq, sizeof(enum badge_event), 10,1);
 
 struct s_object {
   struct smf_ctx ctx;
+  enum badge_event event;
 }s_obj;
 
 LOG_MODULE_REGISTER(BADGE, LOG_LEVEL_DBG);
@@ -44,6 +54,17 @@ static struct display_work_item display_item;
 static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios,
                                                               {0});
 static struct gpio_callback button_cb_data;
+
+/* Send a message to the display thread */
+void message_display_thread(char* text)
+{
+  LOG_INF("Message display thread");
+}
+
+void gen_event(enum badge_event event)
+{
+
+}
 
 int display_init()
 {
@@ -108,14 +129,14 @@ void display_work_handler(struct k_work *work)
     int char_width = 20; // Approximate width of each character
     int total_width = text_len * char_width;
     int x_pos = x_res; // Start from right edge
-    
+
     // Clear the display once at the start
     cfb_framebuffer_clear(display_dev, true);
-    
+
     while (1) {
         // Only clear the area that needs updating
         cfb_framebuffer_clear(display_dev, false);
-        
+
         // Scroll the text from right to left
         while (x_pos > -total_width) {
             // Clear only the area that needs updating
@@ -125,10 +146,10 @@ void display_work_handler(struct k_work *work)
             x_pos -= 4; // Faster scroll speed
             k_msleep(10); // Shorter delay between updates
         }
-        
+
         // Reset position for next iteration
         x_pos = x_res;
-        
+
         // If text was updated, break the loop to restart with new text
         if (display_item->update_text) {
             display_item->update_text = false;
@@ -137,7 +158,7 @@ void display_work_handler(struct k_work *work)
             break;
         }
     }
-    
+
     // Resubmit the work to continue scrolling
     k_work_submit_to_queue(&display_work_q, &display_item->work);
 }
@@ -148,7 +169,7 @@ void display_text(char* text)
     strncpy(display_item.text, text, sizeof(display_item.text) - 1);
     display_item.text[sizeof(display_item.text) - 1] = '\0';
     display_item.update_text = true;
-    
+
     // Submit the work to the display queue
     k_work_submit_to_queue(&display_work_q, &display_item.work);
 }
@@ -189,25 +210,6 @@ void button_work_cb(struct k_work *work)
 int oldmain(void)
 {
   int ret;
-  k_work_init(&button_work, button_work_cb);
-
-  // Initialize display work queue
-  k_work_queue_init(&display_work_q);
-  k_work_queue_start(&display_work_q, display_stack, K_THREAD_STACK_SIZEOF(display_stack),
-                    K_PRIO_COOP(7), NULL);
-  
-  // Initialize display work item
-  k_work_init(&display_item.work, display_work_handler);
-  display_item.update_text = false;
-
-  display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
-  if (!device_is_ready(display_dev)) {
-    printk("Display_Device %s not ready\n", display_dev->name);
-    /* return 0; */
-  }
-
-  LOG_INF("SSD1306 device found\n");
-  display_init();
   display_text("Makerville Badge! Press button to change text");
 
 	if (!gpio_is_ready_dt(&button)) {
@@ -237,11 +239,27 @@ int oldmain(void)
 void badge_init_entry(void* arg)
 {
   LOG_INF("Badge init entry");
-}
+  k_work_init(&button_work, button_work_cb);
 
-void badge_init_run(void* arg)
-{
-  LOG_INF("Badge init run");
+  // Initialize display work queue
+  k_work_queue_init(&display_work_q);
+  k_work_queue_start(&display_work_q, display_stack, K_THREAD_STACK_SIZEOF(display_stack),
+                    K_PRIO_COOP(7), NULL);
+
+  // Initialize display work item
+  k_work_init(&display_item.work, display_work_handler);
+  display_item.update_text = false;
+
+  display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+  if (!device_is_ready(display_dev)) {
+    printk("Display_Device %s not ready\n", display_dev->name);
+    smf_set_state(SMF_CTX(&s_obj), &badge_states[BADGE_STATE_ERROR]);
+    gen_event(BADGE_EVENT_DISPLAY_ERROR);
+    return;
+  }
+
+  LOG_INF("SSD1306 device found\n");
+  display_init();
 }
 
 void badge_init_exit(void* arg)
@@ -256,7 +274,19 @@ void badge_idle_entry(void* arg)
 
 void badge_idle_run(void* arg)
 {
-  LOG_INF("Badge idle run");
+  struct s_object *obj = (struct s_object *)arg;
+
+  switch(obj->event) {
+    case BADGE_EVENT_SHORT_BUTTON_PRESS:
+      message_display_thread("Short button press");
+      break;
+    case BADGE_EVENT_LONG_BUTTON_PRESS:
+      message_display_thread("Long button press");
+      break;
+    default:
+      LOG_INF("Unhandled event in idle state %d", obj->event);
+      break;
+  }
 }
 
 void badge_idle_exit(void* arg)
@@ -264,22 +294,39 @@ void badge_idle_exit(void* arg)
   LOG_INF("Badge idle exit");
 }
 
+void badge_error_entry(void* arg)
+{
+  LOG_INF("Badge error entry");
+}
+
+void badge_error_run(void* arg)
+{
+  LOG_INF("Badge error run");
+}
+
+void badge_error_exit(void* arg)
+{
+  LOG_INF("Badge error exit");
+}
 
 static const struct smf_state badge_states[] = {
-  [BADGE_STATE_INIT] = SMF_CREATE_STATE(badge_init_entry, badge_init_run, badge_init_exit,NULL,NULL),
+  [BADGE_STATE_INIT] = SMF_CREATE_STATE(badge_init_entry, NULL, NULL,NULL,NULL),
   [BADGE_STATE_IDLE] = SMF_CREATE_STATE(badge_idle_entry, badge_idle_run, badge_idle_exit,NULL,NULL),
+  [BADGE_STATE_ERROR] = SMF_CREATE_STATE(badge_error_entry, badge_error_run, badge_error_exit,NULL,NULL),
 };
-
-
 
 int main(void)
 {
   int32_t ret;
+  int rc;
   smf_set_initial(SMF_CTX(&s_obj), &badge_states[BADGE_STATE_INIT]);
   while(1) {
-    ret = smf_run_state(SMF_CTX(&s_obj));
-    if (ret != 0) {
-      LOG_ERR("SMF error: %d", ret);
+    rc = k_msgq_get(&event_msgq, &s_obj.event, K_NO_WAIT);
+    if(rc == 0) {
+      ret = smf_run_state(SMF_CTX(&s_obj));
+      if (ret != 0) {
+        LOG_ERR("SMF error: %d", ret);
+      }
     }
     k_msleep(10);
   }
