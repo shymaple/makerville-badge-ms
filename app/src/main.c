@@ -5,6 +5,18 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/display/cfb.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/smf.h>
+
+static const struct smf_state badge_states[];
+
+enum badge_state {
+  BADGE_STATE_INIT,
+  BADGE_STATE_IDLE,
+};
+
+struct s_object {
+  struct smf_ctx ctx;
+}s_obj;
 
 LOG_MODULE_REGISTER(BADGE, LOG_LEVEL_DBG);
 const struct device *display_dev;
@@ -174,7 +186,7 @@ void button_work_cb(struct k_work *work)
 	return;
 }
 
-int main(void)
+int oldmain(void)
 {
   int ret;
   k_work_init(&button_work, button_work_cb);
@@ -219,5 +231,57 @@ int main(void)
 	gpio_add_callback(button.port, &button_cb_data);
 	LOG_INF("Set up button at %s pin %d\n", button.port->name, button.pin);
 
+  return 0;
+}
+
+void badge_init_entry(void* arg)
+{
+  LOG_INF("Badge init entry");
+}
+
+void badge_init_run(void* arg)
+{
+  LOG_INF("Badge init run");
+}
+
+void badge_init_exit(void* arg)
+{
+  LOG_INF("Badge init exit");
+}
+
+void badge_idle_entry(void* arg)
+{
+  LOG_INF("Badge idle entry");
+}
+
+void badge_idle_run(void* arg)
+{
+  LOG_INF("Badge idle run");
+}
+
+void badge_idle_exit(void* arg)
+{
+  LOG_INF("Badge idle exit");
+}
+
+
+static const struct smf_state badge_states[] = {
+  [BADGE_STATE_INIT] = SMF_CREATE_STATE(badge_init_entry, badge_init_run, badge_init_exit,NULL,NULL),
+  [BADGE_STATE_IDLE] = SMF_CREATE_STATE(badge_idle_entry, badge_idle_run, badge_idle_exit,NULL,NULL),
+};
+
+
+
+int main(void)
+{
+  int32_t ret;
+  smf_set_initial(SMF_CTX(&s_obj), &badge_states[BADGE_STATE_INIT]);
+  while(1) {
+    ret = smf_run_state(SMF_CTX(&s_obj));
+    if (ret != 0) {
+      LOG_ERR("SMF error: %d", ret);
+    }
+    k_msleep(10);
+  }
   return 0;
 }
