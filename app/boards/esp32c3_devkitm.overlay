@@ -3,6 +3,7 @@
 		zephyr,display = &ssd1306;
     zephyr,console = &usb_serial;
     zephyr,shell-uart = &usb_serial;
+
 	};
 };
 
@@ -43,3 +44,15 @@
 &usb_serial {
   status = "okay";
 };
+
+// &spi1 {
+//   status = "okay";
+//   compatible = "espressif,esp32-spi";
+//   led_strip: led_strip@0 {
+//     compatible = "worldsemi,ws2812";
+//     reg = <0>;
+//     spi-max-frequency = <10000000>;
+//     chain-length = <1>;
+//     spi-bus-width = <1>;
+//   };
+// }

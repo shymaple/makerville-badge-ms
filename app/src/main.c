@@ -6,6 +6,7 @@
 #include <zephyr/display/cfb.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/smf.h>
+#include <zephyr/input/input.h>
 
 static const struct smf_state badge_states[];
 
@@ -21,6 +22,10 @@ enum badge_event {
   BADGE_EVENT_LONG_BUTTON_PRESS,
 };
 
+struct global_context{
+  int64_t button_press_time;
+} gc;
+
 K_MSGQ_DEFINE(event_msgq, sizeof(enum badge_event), 10,1);
 
 struct s_object {
@@ -30,7 +35,6 @@ struct s_object {
 
 LOG_MODULE_REGISTER(BADGE, LOG_LEVEL_DBG);
 const struct device *display_dev;
-struct k_work button_work;
 
 // Define work queue for display operations
 K_THREAD_STACK_DEFINE(display_stack, 1024);
@@ -46,15 +50,6 @@ struct display_work_item {
 // Create a single work item that we'll reuse
 static struct display_work_item display_item;
 
-#define SW0_NODE	DT_ALIAS(sw0)
-#if !DT_NODE_HAS_STATUS_OKAY(SW0_NODE)
-#error "Unsupported board: sw0 devicetree alias is not defined"
-#endif
-
-static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios,
-                                                              {0});
-static struct gpio_callback button_cb_data;
-
 /* Send a message to the display thread */
 void message_display_thread(char* text)
 {
@@ -63,7 +58,7 @@ void message_display_thread(char* text)
 
 void gen_event(enum badge_event event)
 {
-
+  k_msgq_put(&event_msgq, (void*)&event, K_NO_WAIT);
 }
 
 int display_init()
@@ -174,19 +169,6 @@ void display_text(char* text)
     k_work_submit_to_queue(&display_work_q, &display_item.work);
 }
 
-void button_pressed(const struct device *dev, struct gpio_callback *cb,
-                    uint32_t pins)
-{
-	int val = gpio_pin_get_dt(&button);
-    if (val == 1) {
-        // Button pressed (assuming active low)
-		  k_work_submit(&button_work);
-    } else {
-        // Button released
-    }
-
-}
-
 int index;
 #define MAX_STRINGS 3
 char text[MAX_STRINGS][32]= {
@@ -195,51 +177,9 @@ char text[MAX_STRINGS][32]= {
   "Interested in developer tools!"
 };
 
-void button_work_cb(struct k_work *work)
-{
-  LOG_INF("Button pressed");
-  cfb_framebuffer_set_font(display_dev, 2);
-  display_text(text[index]);
-
-  index = index + 1;
-  if (index == MAX_STRINGS)
-    index = 0;
-	return;
-}
-
-int oldmain(void)
-{
-  int ret;
-  display_text("Makerville Badge! Press button to change text");
-
-	if (!gpio_is_ready_dt(&button)) {
-		LOG_INF("Error: button device %s is not ready\n",
-		       button.port->name);
-	}
-  /* TODO Uncommenting everything below this causes issues in I2C */
-	ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
-	if (ret != 0) {
-		LOG_INF("Error %d: failed to configure %s pin %d\n",
-		       ret, button.port->name, button.pin);
-	}
-	ret = gpio_pin_interrupt_configure_dt(&button,
-                                        GPIO_INT_EDGE_TO_ACTIVE);
-	if (ret != 0) {
-		LOG_INF("Error %d: failed to configure interrupt on %s pin %d\n",
-           ret, button.port->name, button.pin);
-		return 0;
-	}
-	gpio_init_callback(&button_cb_data, button_pressed, BIT(button.pin));
-	gpio_add_callback(button.port, &button_cb_data);
-	LOG_INF("Set up button at %s pin %d\n", button.port->name, button.pin);
-
-  return 0;
-}
-
 void badge_init_entry(void* arg)
 {
   LOG_INF("Badge init entry");
-  k_work_init(&button_work, button_work_cb);
 
   // Initialize display work queue
   k_work_queue_init(&display_work_q);
@@ -280,10 +220,12 @@ void badge_idle_run(void* arg)
 
   switch(obj->event) {
     case BADGE_EVENT_SHORT_BUTTON_PRESS:
-      message_display_thread("Short button press");
+      LOG_INF("Short button pressed when IDLE");
+      display_text("Short button press");
       break;
     case BADGE_EVENT_LONG_BUTTON_PRESS:
-      message_display_thread("Long button press");
+      LOG_INF("Long button pressed when IDLE");
+      display_text("Long button press");
       break;
     default:
       LOG_INF("Unhandled event in idle state %d", obj->event);
@@ -317,6 +259,31 @@ static const struct smf_state badge_states[] = {
   [BADGE_STATE_ERROR] = SMF_CREATE_STATE(badge_error_entry, badge_error_run, badge_error_exit,NULL,NULL),
 };
 
+void input_cb(struct input_event *event, void *cb_arg)
+{
+    if (event->type == INPUT_EV_KEY) {
+        if (event->code == INPUT_KEY_0) {
+            if (event->value == 1) {
+                // Button pressed
+                LOG_INF("Button pressed");
+                gc.button_press_time = k_uptime_get();
+            } else if (event->value == 0) {
+                // Button released
+                LOG_INF("Button released");
+                int64_t press_duration = k_uptime_get() - gc.button_press_time;
+                if(press_duration > 1000) {
+                  LOG_INF("Long button press");
+                  gen_event(BADGE_EVENT_LONG_BUTTON_PRESS);
+                } else {
+                  LOG_INF("Short button press");
+                  gen_event(BADGE_EVENT_SHORT_BUTTON_PRESS);
+                }
+            }
+        }
+    }
+}
+
+INPUT_CALLBACK_DEFINE(NULL, input_cb,NULL);
 int main(void)
 {
   int32_t ret;
