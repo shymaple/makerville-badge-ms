@@ -260,6 +260,7 @@ void badge_init_entry(void* arg)
 
   LOG_INF("SSD1306 device found\n");
   display_init();
+  smf_set_state(SMF_CTX(&s_obj), &badge_states[BADGE_STATE_IDLE]);
 }
 
 void badge_init_exit(void* arg)
@@ -270,6 +271,7 @@ void badge_init_exit(void* arg)
 void badge_idle_entry(void* arg)
 {
   LOG_INF("Badge idle entry");
+  display_text("Makerville Badge!");
 }
 
 void badge_idle_run(void* arg)
