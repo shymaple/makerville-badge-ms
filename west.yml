@@ -12,4 +12,5 @@ manifest:
         # strictly needed by the application.
         name-allowlist:
           - hal_espressif
+          - mbedtls
 

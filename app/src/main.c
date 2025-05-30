@@ -7,6 +7,13 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/smf.h>
 #include <zephyr/input/input.h>
+#include <zephyr/types.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
 
 static const struct smf_state badge_states[];
 
@@ -18,6 +25,7 @@ enum badge_state {
 
 enum badge_event {
   BADGE_EVENT_DISPLAY_ERROR,
+  BADGE_EVENT_BLE_ERROR,
   BADGE_EVENT_SHORT_BUTTON_PRESS,
   BADGE_EVENT_LONG_BUTTON_PRESS,
 };
@@ -49,6 +57,111 @@ struct display_work_item {
 
 // Create a single work item that we'll reuse
 static struct display_work_item display_item;
+
+// BLE service UUIDs
+#define BADGE_SERVICE_UUID 0x1234
+#define BADGE_CHARACTERISTIC_UUID 0x5678
+
+// BLE service data
+static uint8_t badge_data[32] = "Makerville Badge";
+
+// Read callback for the characteristic
+static ssize_t read_badge_data(struct bt_conn *conn,
+                             const struct bt_gatt_attr *attr,
+                             void *buf, uint16_t len, uint16_t offset)
+{
+    return bt_gatt_attr_read(conn, attr, buf, len, offset, badge_data,
+                            strlen(badge_data));
+}
+
+// Write callback for the characteristic
+static ssize_t write_badge_data(struct bt_conn *conn,
+                              const struct bt_gatt_attr *attr,
+                              const void *buf, uint16_t len, uint16_t offset,
+                              uint8_t flags)
+{
+    if (offset + len > sizeof(badge_data)) {
+        return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+    }
+
+    memcpy(badge_data + offset, buf, len);
+    badge_data[len] = '\0';  // Ensure null termination
+
+    LOG_INF("Received data: %s", badge_data);
+    display_text(badge_data);
+    return len;
+}
+
+static struct bt_gatt_attr attrs[] = {
+    BT_GATT_PRIMARY_SERVICE(BT_UUID_DECLARE_16(BADGE_SERVICE_UUID)),
+    BT_GATT_CHARACTERISTIC(BT_UUID_DECLARE_16(BADGE_CHARACTERISTIC_UUID),
+                          BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+                          BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+                          read_badge_data, write_badge_data, badge_data),
+};
+
+static struct bt_gatt_service badge_service = {
+    .attrs = attrs,
+    .attr_count = ARRAY_SIZE(attrs),
+};
+
+// BLE connection callback
+static void connected(struct bt_conn *conn, uint8_t err)
+{
+    if (err) {
+        LOG_ERR("Connection failed (err %u)", err);
+    } else {
+        LOG_INF("Connected");
+    }
+}
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+    LOG_INF("Disconnected (reason %u)", reason);
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+    .connected = connected,
+    .disconnected = disconnected,
+};
+
+// BLE initialization function
+static int ble_init(void)
+{
+    int err;
+    struct bt_le_adv_param param = {
+        .id = 0,
+        .sid = 0,
+        .secondary_max_skip = 0,
+        .options = BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME,
+        .interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
+        .interval_max = BT_GAP_ADV_FAST_INT_MAX_2,
+        .peer = NULL,
+    };
+
+    err = bt_enable(NULL);
+    if (err) {
+        LOG_ERR("Bluetooth init failed (err %d)", err);
+        return err;
+    }
+
+    LOG_INF("Bluetooth initialized");
+
+    err = bt_gatt_service_register(&badge_service);
+    if (err) {
+        LOG_ERR("Service registration failed (err %d)", err);
+        return err;
+    }
+
+    err = bt_le_adv_start(&param, NULL, 0, NULL, 0);
+    if (err) {
+        LOG_ERR("Advertising failed to start (err %d)", err);
+        return err;
+    }
+
+    LOG_INF("Advertising started");
+    return 0;
+}
 
 /* Send a message to the display thread */
 void message_display_thread(char* text)
@@ -200,6 +313,16 @@ void badge_init_entry(void* arg)
 
   LOG_INF("SSD1306 device found\n");
   display_init();
+
+  // Initialize Bluetooth
+  int err = ble_init();
+  if (err) {
+    LOG_ERR("Bluetooth initialization failed");
+    smf_set_state(SMF_CTX(&s_obj), &badge_states[BADGE_STATE_ERROR]);
+    gen_event(BADGE_EVENT_BLE_ERROR);
+    return;
+  }
+
   smf_set_state(SMF_CTX(&s_obj), &badge_states[BADGE_STATE_IDLE]);
 }
 
