@@ -136,7 +136,7 @@ static int ble_init(void)
         .id = 0,
         .sid = 0,
         .secondary_max_skip = 0,
-        .options =  BT_LE_ADV_OPT_USE_NAME,
+        .options = BT_LE_ADV_OPT_CONN| BT_LE_ADV_OPT_USE_NAME,
         .interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
         .interval_max = BT_GAP_ADV_FAST_INT_MAX_2,
         .peer = NULL,
