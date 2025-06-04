@@ -15,8 +15,6 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 
-// Forward declarations
-void display_text(char* text);
 
 static const struct smf_state badge_states[];
 
@@ -32,6 +30,10 @@ enum badge_event {
   BADGE_EVENT_SHORT_BUTTON_PRESS,
   BADGE_EVENT_LONG_BUTTON_PRESS,
 };
+
+// Forward declarations
+void display_text(char* text);
+void gen_event(enum badge_event event);
 
 struct global_context{
   int64_t button_press_time;
@@ -108,11 +110,45 @@ static struct bt_gatt_service badge_service = {
     .attr_count = ARRAY_SIZE(attrs),
 };
 
+// Helper function to start advertising
+static int start_advertising(void)
+{
+    int err;
+
+    // Stop any existing advertising first
+    err = bt_le_adv_stop();
+    if (err) {
+        LOG_ERR("Failed to stop advertising (err %d)", err);
+        // Continue anyway as we want to try starting
+    }
+
+    struct bt_le_adv_param param = {
+        .id = 0,
+        .sid = 0,
+        .secondary_max_skip = 0,
+        .options = BT_LE_ADV_OPT_CONN  | BT_LE_ADV_OPT_USE_NAME,
+        .interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
+        .interval_max = BT_GAP_ADV_FAST_INT_MAX_2,
+        .peer = NULL,
+    };
+    /* wait for 1 second */
+    k_msleep(1000);
+    err = bt_le_adv_start(&param, NULL, 0, NULL, 0);
+    if (err) {
+        LOG_ERR("Advertising failed to start (err %d)", err);
+        return err;
+    }
+
+    LOG_INF("Advertising started");
+    return 0;
+}
+
 // BLE connection callback
 static void connected(struct bt_conn *conn, uint8_t err)
 {
     if (err) {
         LOG_ERR("Connection failed (err %u)", err);
+        gen_event(BADGE_EVENT_BLE_ERROR);
     } else {
         LOG_INF("Connected");
     }
@@ -121,6 +157,13 @@ static void connected(struct bt_conn *conn, uint8_t err)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
     LOG_INF("Disconnected (reason %u)", reason);
+
+    // Restart advertising
+    int err = start_advertising();
+    if (err) {
+        LOG_ERR("Failed to restart advertising (err %d)", err);
+        gen_event(BADGE_EVENT_BLE_ERROR);
+    }
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
@@ -132,19 +175,11 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 static int ble_init(void)
 {
     int err;
-    struct bt_le_adv_param param = {
-        .id = 0,
-        .sid = 0,
-        .secondary_max_skip = 0,
-        .options = BT_LE_ADV_OPT_CONN| BT_LE_ADV_OPT_USE_NAME,
-        .interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
-        .interval_max = BT_GAP_ADV_FAST_INT_MAX_2,
-        .peer = NULL,
-    };
 
     err = bt_enable(NULL);
     if (err) {
         LOG_ERR("Bluetooth init failed (err %d)", err);
+        gen_event(BADGE_EVENT_BLE_ERROR);
         return err;
     }
 
@@ -153,17 +188,11 @@ static int ble_init(void)
     err = bt_gatt_service_register(&badge_service);
     if (err) {
         LOG_ERR("Service registration failed (err %d)", err);
+        gen_event(BADGE_EVENT_BLE_ERROR);
         return err;
     }
 
-    err = bt_le_adv_start(&param, NULL, 0, NULL, 0);
-    if (err) {
-        LOG_ERR("Advertising failed to start (err %d)", err);
-        return err;
-    }
-
-    LOG_INF("Advertising started");
-    return 0;
+    return start_advertising();
 }
 
 /* Send a message to the display thread */
@@ -353,6 +382,10 @@ void badge_idle_run(void* arg)
       LOG_INF("Long button pressed when IDLE");
       display_text("Long button press");
       break;
+    case BADGE_EVENT_BLE_ERROR:
+      smf_set_state(SMF_CTX(&s_obj), &badge_states[BADGE_STATE_ERROR]);
+      gen_event(BADGE_EVENT_BLE_ERROR);
+      break;
     default:
       LOG_INF("Unhandled event in idle state %d", obj->event);
       break;
@@ -371,7 +404,19 @@ void badge_error_entry(void* arg)
 
 void badge_error_run(void* arg)
 {
-  LOG_INF("Badge error run");
+
+  struct s_object *obj = (struct s_object *)arg;
+  switch(obj->event) {
+    case BADGE_EVENT_DISPLAY_ERROR:
+      LOG_INF("Display error - can only show this");
+      break;
+    case BADGE_EVENT_BLE_ERROR:
+      display_text("BLE error");
+      break;
+    default:
+      LOG_INF("Unhandled event in error state %d", obj->event);
+      break;
+  }
 }
 
 void badge_error_exit(void* arg)
