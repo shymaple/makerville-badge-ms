@@ -15,6 +15,9 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 
+// Forward declarations
+void display_text(char* text);
+
 static const struct smf_state badge_states[];
 
 enum badge_state {
@@ -133,7 +136,7 @@ static int ble_init(void)
         .id = 0,
         .sid = 0,
         .secondary_max_skip = 0,
-        .options = BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME,
+        .options =  BT_LE_ADV_OPT_USE_NAME,
         .interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
         .interval_max = BT_GAP_ADV_FAST_INT_MAX_2,
         .peer = NULL,
