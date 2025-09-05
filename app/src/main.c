@@ -232,7 +232,7 @@ int display_init()
 	display_blanking_off(display_dev);
 
 	x_res = cfb_get_display_parameter(display_dev, CFB_DISPLAY_WIDTH);
-	y_res = cfb_get_display_parameter(display_dev, CFB_DISPLAY_HEIGH);
+	y_res = cfb_get_display_parameter(display_dev, CFB_DISPLAY_HEIGHT);
 	rows = cfb_get_display_parameter(display_dev, CFB_DISPLAY_ROWS);
 	ppt = cfb_get_display_parameter(display_dev, CFB_DISPLAY_PPT);
 
