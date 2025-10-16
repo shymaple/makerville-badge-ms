@@ -14,6 +14,54 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/led_strip.h>
+#include <string.h>
+#define LOG_LEVEL LOG_LEVEL_DGB
+LOG_MODULE_REGISTER(badge_shell);
+
+#define STRIP_NODE  DT_ALIAS(led_strip)
+#if !DT_NODE_HAS_STATUS(STRIP_NODE, okay)
+#error "LED strip device not defined in devicetree"
+#endif
+
+#define STRIP_NUM_PIXELS DT_PROP(STRIP_NODE, chain_length)
+#define LED_DELAY  K_MSEC(600)
+#define RGB(_r, _g, _b) ((struct led_rgb) { .r = (_r), .g = (_g), .b = (_b)})
+static const struct device *const strip = DEVICE_DT_GET(STRIP_NODE);
+static struct led_rgb pixels[STRIP_NUM_PIXELS];
+static void set_led_color(struct led_rgb color)
+{
+  for (int i = 0; i < STRIP_NUM_PIXELS; i++){
+    pixels[i] = color;
+  }
+  int rc = led_strip_update_rgb(strip, pixels, STRIP_NUM_PIXELS);
+  if(rc){
+    LOG_ERR("led strip update failed: %d",rc);
+  }else{
+    LOG_INF("LED color set: R=%u G=%u B=%u", color.r, color.g, color.b);
+  }
+}
+static int cmd_led(const struct shell *shell, size_t argc, char **argv)
+{
+  if (argc != 2){
+    shell_print(shell, "Usage: led<r/g/b>");
+    return -EINVAL;
+  }
+  const char *c = argv[1];
+  if(strcmp(c, "r") == 0){
+    set_led_color(RGB(0x0F, 0x00, 0x00));
+  } else if (strcmp(c, "g") == 0){
+    set_led_color(RGB(0x00, 0x0F, 0x00));
+  }else if (strcmp(c, "b") == 0){
+    set_led_color(RGB(0x00, 0x00, 0x0F));
+  }else{
+    shell_error(shell, "Invalid color (r/g/b)");
+    return -EINVAL;
+  }
+  return 0;
+}
+SHELL_CMD_REGISTER(led, NULL, "Set LED color (r, g, b)", cmd_led);
 
 
 static const struct smf_state badge_states[];
@@ -46,7 +94,7 @@ struct s_object {
   enum badge_event event;
 }s_obj;
 
-LOG_MODULE_REGISTER(BADGE, LOG_LEVEL_DBG);
+//LOG_MODULE_REGISTER(BADGE, LOG_LEVEL_DBG);
 const struct device *display_dev;
 
 // Define work queue for display operations
@@ -459,6 +507,13 @@ int main(void)
 {
   int32_t ret;
   int rc;
+  
+  if (!device_is_ready(strip)){
+    LOG_ERR("LED strip not ready");
+    return ;
+  }
+  LOG_INF("LED strip ready. Use shell command: led r/g/b");
+  set_led_color(RGB(0x0F, 0x0F, 0x0F)); // Default: white
   smf_set_initial(SMF_CTX(&s_obj), &badge_states[BADGE_STATE_INIT]);
   while(1) {
     rc = k_msgq_get(&event_msgq, &s_obj.event, K_NO_WAIT);
