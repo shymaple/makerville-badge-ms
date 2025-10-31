@@ -25,7 +25,13 @@ jobs:
         uses: zephyrproject-rtos/action-zephyr-setup@v1
         with:
           app-path: makerville-badge
-          toolchains: espressif
+          toolchains: riscv64-zephyr-elf
+
+      - name: Fetch Espressif HAL blobs
+        working-directory: makerville-badge
+        shell: bash
+        run: |
+          west blobs fetch hal_espressif
 
       - name: Build firmware for ESP32-C3
         working-directory: makerville-badge
