@@ -127,7 +127,7 @@ static struct display_work_item display_item;
 #define BADGE_CHARACTERISTIC_UUID 0x5678
 
 // BLE service data
-static uint8_t badge_data[32] = "Makerville Badge";
+static uint8_t badge_data[32] = "Makerville Badge MS";
 
 // Read callback for the characteristic
 static ssize_t read_badge_data(struct bt_conn *conn,
@@ -430,7 +430,7 @@ void badge_init_exit(void* arg)
 void badge_idle_entry(void* arg)
 {
   LOG_INF("Badge idle entry");
-  display_text("Makerville Badge!");
+  display_text("Makerville Badge MS!");
 }
 
 void badge_idle_run(void* arg)
