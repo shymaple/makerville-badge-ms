@@ -42,9 +42,11 @@ jobs:
       - name: List build artifacts
         working-directory: makerville-badge
         run: |
-          echo "Build artifacts:"
-          ls -lh build/zephyr/*.bin build/zephyr/*.elf 2>/dev/null || echo "Binary files not found"
-          ls -lh build/zephyr/ | head -20
+          echo "=== Build directory structure ==="
+          find build -type f -name "*.bin" -o -name "*.elf" -o -name "*.hex" 2>/dev/null || echo "No binaries found"
+          echo ""
+          echo "=== Zephyr directory contents ==="
+          ls -lh build/zephyr/ 2>/dev/null || echo "Zephyr directory not found"
 
       - name: Get branch name
         id: branch
@@ -56,11 +58,32 @@ jobs:
           echo "name=$BRANCH_NAME_SAFE" >> $GITHUB_OUTPUT
           echo "Branch name: $BRANCH_NAME_SAFE"
 
-      - name: Rename binary with commit ID
+      - name: Rename binaries with commit ID
         working-directory: makerville-badge/build/zephyr
         run: |
-          cp zephyr.bin zephyr_${{ github.sha }}.bin
-          ls -lh zephyr_${{ github.sha }}.bin
+          echo "=== Renaming all .bin files with commit ID ==="
+          BIN_COUNT=0
+          for binfile in *.bin; do
+            if [ -f "$binfile" ]; then
+              # Extract basename without extension
+              basename="${binfile%.bin}"
+              # Create renamed version
+              cp "$binfile" "${basename}_${{ github.sha }}.bin"
+              echo "Renamed: $binfile -> ${basename}_${{ github.sha }}.bin"
+              ls -lh "${basename}_${{ github.sha }}.bin"
+              BIN_COUNT=$((BIN_COUNT + 1))
+            fi
+          done
+
+          if [ $BIN_COUNT -eq 0 ]; then
+            echo "ERROR: No .bin files found in build/zephyr/"
+            echo "Contents of build/zephyr/:"
+            ls -lh
+            exit 1
+          fi
+
+          echo ""
+          echo "=== Successfully renamed $BIN_COUNT binary file(s) ==="
 
       - name: Upload firmware to EmbedHub
         if: github.event_name == 'push'
@@ -69,7 +92,7 @@ jobs:
           api-key: ${{ secrets.EMBEDHUB_API_KEY }}
           organization: ${{ secrets.EMBEDHUB_ORG }}
           project: ${{ secrets.EMBEDHUB_PROJECT }}
-          files: 'makerville-badge/build/zephyr/zephyr_${{ github.sha }}.bin'
+          files: 'makerville-badge/build/zephyr/*_${{ github.sha }}.bin'
           path: 'releases/${{ steps.branch.outputs.name }}/'
           working-directory: '.'
 
@@ -78,8 +101,7 @@ jobs:
         with:
           name: firmware-esp32c3-${{ steps.branch.outputs.name }}-${{ github.sha }}
           path: |
-            makerville-badge/build/zephyr/zephyr.bin
-            makerville-badge/build/zephyr/zephyr_${{ github.sha }}.bin
-            makerville-badge/build/zephyr/zephyr.elf
-            makerville-badge/build/zephyr/zephyr.map
+            makerville-badge/build/zephyr/*.bin
+            makerville-badge/build/zephyr/*.elf
+            makerville-badge/build/zephyr/*.map
           retention-days: 30
