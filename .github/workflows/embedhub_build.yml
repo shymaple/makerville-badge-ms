@@ -1,47 +1,97 @@
-name: Zephyr Build and Embedhub Deployment
+name: Build and Upload Firmware
 
 on:
   push:
-    branches: [ "master" ]
   pull_request:
-    branches: [ "master" ]
   workflow_dispatch:
 
 jobs:
-  build_and_deploy:
-    runs-on: ubuntu-latest
+  build-and-upload:
+    runs-on: ubuntu-22.04
+
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0 # Needed for proper Git information
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: project
+          persist-credentials: false
 
-    - name: Setup Zephyr Project
-      # Assuming you have a custom action or script here to set up the Zephyr environment.
-      # Since we don't know the exact setup, this is a placeholder.
-      run: |
-        echo "Setting up Zephyr environment..."
-        # Example commands (Replace with your actual setup if needed)
-        # west init -l zephyr/
-        # west update
-        # west zephyr-build -b makerville_badge_ms ./
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
 
-    - name: Build Zephyr Application
-      # This step should execute the actual Zephyr build command.
-      run: |
-        echo "Building Zephyr application..."
-        # Replace with the actual build command that generates the zephyr.bin file
-        mkdir build 
-        echo "Mock Zephyr Binary" > build/zephyr.bin
+      - name: Setup Zephyr project
+        uses: zephyrproject-rtos/action-zephyr-setup@v1
+        with:
+          app-path: project
+          toolchains: riscv64-zephyr-elf
 
-    - name: Deploy to Embedhub (FIXED SECRET NAME)
-      uses: Embed-Hub/EmbedHub-GitHub-Action@master
-      with:
-        api-key: ${{ secrets.EMBEDHUB_KEY }} # <-- CORRECTED: Using EMBEDHUB_KEY
-        organization: ${{ secrets.MAHENDRA }}
-        project: ${{ secrets.MAKERVILLE-BADGE-MS }}
-        files: 'build/*.bin'
+      - name: Fetch Espressif HAL blobs
+        working-directory: project
+        shell: bash
+        run: |
+          west blobs fetch hal_espressif
 
-        
-    - name: Summary
-      run: echo "Deployment workflow completed. Check Embedhub for the uploaded binary."
+      - name: Build firmware for ESP32-C3
+        working-directory: project
+        shell: bash
+        run: |
+          west build -p always -b esp32c3_devkitm app -- -DBOARD_ROOT=.
+
+      - name: List build artifacts
+        working-directory: project
+        run: |
+          echo "=== Build directory structure ==="
+          find build -type f -name "*.bin" -o -name "*.elf" -o -name "*.hex" 2>/dev/null || echo "No binaries found"
+          echo ""
+          echo "=== Zephyr directory contents ==="
+          ls -lh build/zephyr/ 2>/dev/null || echo "Zephyr directory not found"
+
+      - name: Get branch name
+        id: branch
+        run: |
+          # Extract branch name from ref
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          # Sanitize branch name for use in paths (replace / with -)
+          BRANCH_NAME_SAFE=$(echo "$BRANCH_NAME" | sed 's/\//-/g')
+          echo "name=$BRANCH_NAME_SAFE" >> $GITHUB_OUTPUT
+          echo "Branch name: $BRANCH_NAME_SAFE"
+
+      - name: Rename binaries with commit ID
+        working-directory: project/build/zephyr
+        run: |
+          echo "=== Renaming all .bin files with commit ID ==="
+          BIN_COUNT=0
+          for binfile in *.bin; do
+            if [ -f "$binfile" ]; then
+              # Extract basename without extension
+              basename="${binfile%.bin}"
+              # Create renamed version
+              cp "$binfile" "${basename}_${{ github.sha }}.bin"
+              echo "Renamed: $binfile -> ${basename}_${{ github.sha }}.bin"
+              ls -lh "${basename}_${{ github.sha }}.bin"
+              BIN_COUNT=$((BIN_COUNT + 1))
+            fi
+          done
+
+          if [ $BIN_COUNT -eq 0 ]; then
+            echo "ERROR: No .bin files found in build/zephyr/"
+            echo "Contents of build/zephyr/:"
+            ls -lh
+            exit 1
+          fi
+
+          echo ""
+          echo "=== Successfully renamed $BIN_COUNT binary file(s) ==="
+
+      - name: Upload firmware to EmbedHub
+        if: github.event_name == 'push'
+        uses: Embed-Hub/EmbedHub-GitHub-Action@master
+        with:
+          api-key: ${{ secrets.EMBEDHUB_KEY }}
+          organization: ${{ secrets.EMBEDHUB_ORG }}
+          project: ${{ secrets.EMBEDHUB_PROJECT }}
+          files: 'project/build/zephyr/*_${{ github.sha }}.bin'
+          path: 'releases/${{ steps.branch.outputs.name }}/'
+          working-directory: '.'
