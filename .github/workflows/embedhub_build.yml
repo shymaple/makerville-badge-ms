@@ -89,7 +89,7 @@ jobs:
         if: github.event_name == 'push'
         uses: Embed-Hub/EmbedHub-GitHub-Action@master
         with:
-          api-key: ${{ secrets.EMBEDHUB_KEY }}
+          api-key: ${{ secrets.EMBEDHUB_API_KEY }}
           organization: ${{ secrets.EMBEDHUB_ORG }}
           project: ${{ secrets.EMBEDHUB_PROJECT }}
           files: 'project/build/zephyr/*_${{ github.sha }}.bin'
