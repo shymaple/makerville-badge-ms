@@ -13,7 +13,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          path: makerville-badge
+          path: project
           persist-credentials: false
 
       - name: Set up Python
@@ -24,23 +24,23 @@ jobs:
       - name: Setup Zephyr project
         uses: zephyrproject-rtos/action-zephyr-setup@v1
         with:
-          app-path: makerville-badge
+          app-path: project
           toolchains: riscv64-zephyr-elf
 
       - name: Fetch Espressif HAL blobs
-        working-directory: makerville-badge
+        working-directory: project
         shell: bash
         run: |
           west blobs fetch hal_espressif
 
       - name: Build firmware for ESP32-C3
-        working-directory: makerville-badge
+        working-directory: project
         shell: bash
         run: |
           west build -p always -b esp32c3_devkitm app -- -DBOARD_ROOT=.
 
       - name: List build artifacts
-        working-directory: makerville-badge
+        working-directory: project
         run: |
           echo "=== Build directory structure ==="
           find build -type f -name "*.bin" -o -name "*.elf" -o -name "*.hex" 2>/dev/null || echo "No binaries found"
@@ -59,7 +59,7 @@ jobs:
           echo "Branch name: $BRANCH_NAME_SAFE"
 
       - name: Rename binaries with commit ID
-        working-directory: makerville-badge/build/zephyr
+        working-directory: project/build/zephyr
         run: |
           echo "=== Renaming all .bin files with commit ID ==="
           BIN_COUNT=0
@@ -92,6 +92,6 @@ jobs:
           api-key: ${{ secrets.EMBEDHUB_API_KEY }}
           organization: ${{ secrets.EMBEDHUB_ORG }}
           project: ${{ secrets.EMBEDHUB_PROJECT }}
-          files: 'makerville-badge/build/zephyr/*_${{ github.sha }}.bin'
+          files: 'project/build/zephyr/*_${{ github.sha }}.bin'
           path: 'releases/${{ steps.branch.outputs.name }}/'
           working-directory: '.'
