@@ -1,0 +1,79 @@
+name: Build and Upload Firmware
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: makerville-badge
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Setup Zephyr project
+        uses: zephyrproject-rtos/action-zephyr-setup@v1
+        with:
+          app-path: makerville-badge
+          toolchains: espressif
+
+      - name: Build firmware for ESP32-C3
+        working-directory: makerville-badge
+        shell: bash
+        run: |
+          west build -p always -b esp32c3_devkitm app -- -DBOARD_ROOT=.
+
+      - name: List build artifacts
+        working-directory: makerville-badge
+        run: |
+          echo "Build artifacts:"
+          ls -lh build/zephyr/*.bin build/zephyr/*.elf 2>/dev/null || echo "Binary files not found"
+          ls -lh build/zephyr/ | head -20
+
+      - name: Get branch name
+        id: branch
+        run: |
+          # Extract branch name from ref
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          # Sanitize branch name for use in paths (replace / with -)
+          BRANCH_NAME_SAFE=$(echo "$BRANCH_NAME" | sed 's/\//-/g')
+          echo "name=$BRANCH_NAME_SAFE" >> $GITHUB_OUTPUT
+          echo "Branch name: $BRANCH_NAME_SAFE"
+
+      - name: Rename binary with commit ID
+        working-directory: makerville-badge/build/zephyr
+        run: |
+          cp zephyr.bin zephyr_${{ github.sha }}.bin
+          ls -lh zephyr_${{ github.sha }}.bin
+
+      - name: Upload firmware to EmbedHub
+        if: github.event_name == 'push'
+        uses: Embed-Hub/EmbedHub-GitHub-Action@master
+        with:
+          api-key: ${{ secrets.EMBEDHUB_API_KEY }}
+          organization: ${{ secrets.EMBEDHUB_ORG }}
+          project: ${{ secrets.EMBEDHUB_PROJECT }}
+          files: 'makerville-badge/build/zephyr/zephyr_${{ github.sha }}.bin'
+          path: 'releases/${{ steps.branch.outputs.name }}/'
+          working-directory: '.'
+
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-esp32c3-${{ steps.branch.outputs.name }}-${{ github.sha }}
+          path: |
+            makerville-badge/build/zephyr/zephyr.bin
+            makerville-badge/build/zephyr/zephyr_${{ github.sha }}.bin
+            makerville-badge/build/zephyr/zephyr.elf
+            makerville-badge/build/zephyr/zephyr.map
+          retention-days: 30
