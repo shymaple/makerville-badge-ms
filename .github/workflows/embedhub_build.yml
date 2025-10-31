@@ -38,8 +38,8 @@ jobs:
       uses: Embed-Hub/EmbedHub-GitHub-Action@master
       with:
         api-key: ${{ secrets.EMBEDHUB_KEY }} # <-- CORRECTED: Using EMBEDHUB_KEY
-        organization: ${{ secrets.mahendra }}
-        project: ${{ secrets.makerville-badge-ms }}
+        organization: ${{ secrets.MAHENDRA }}
+        project: ${{ secrets.MAKERVILLE-BADGE-MS }}
         files: 'build/*.bin'
 
         
