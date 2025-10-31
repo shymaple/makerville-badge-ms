@@ -1,0 +1,73 @@
+name: Zephyr Build and Embedhub Deployment
+
+# Trigger this workflow on every push to the 'master' branch
+on:
+  push:
+    branches:
+      - master
+  # Allow manual trigger via GitHub Actions UI
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    
+    # Define environment variables used by the Zephyr build process
+    env:
+      ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk
+      # Makerville badge targets the nrf52840dk_nrf52840 board
+      ZEPHYR_BOARD: nrf52840dk_nrf52840
+      # The application code is assumed to be at the root of the repo ('.')
+      ZEPHYR_APP_PATH: .
+
+    steps:
+      # 1. Checkout the repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Python environment (required for Zephyr/West)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # 3. Setup the Zephyr build environment
+      # This downloads the Zephyr SDK, West, and initializes the workspace.
+      - name: Setup Zephyr Project
+        uses: zephyrproject-rtos/action-zephyr-setup@v1
+        with:
+          # This specifies the application directory relative to the repository root.
+          app-path: ${{ env.ZEPHYR_APP_PATH }}
+          # The toolchain for the nRF52 series
+          toolchains: arm-zephyr-eabi
+          
+      # 4. Build the Zephyr application
+      # This generates the firmware artifact (.bin file)
+      - name: Build Zephyr Application
+        run: |
+          # Use 'west build' to compile the firmware for the target board
+          west build ${{ env.ZEPHYR_APP_PATH }} -b ${{ env.ZEPHYR_BOARD }}
+
+      # 5. Locate the generated binary file
+      # The .bin file is created in the 'build/zephyr' subdirectory
+      - name: Set Binary Path Variable
+        id: set_path
+        run: |
+          # Define the path to the generated bin file relative to the workspace root
+          BIN_PATH="build/zephyr/zephyr.bin"
+          echo "firmware_path=$BIN_PATH" >> $GITHUB_OUTPUT
+          
+      # 6. Deploy the generated .bin file using Embedhub
+      - name: Deploy to Embedhub
+        uses: embedhub-platform/action@main
+        with:
+          organization_slug: 'mahendra'
+          project_slug: 'makerville-badge-ms'
+          api_key: ${{ secrets.EMBEDHUB_KEY }}
+          
+          # The path to the file produced by the 'west build' step
+          firmware_path: ${{ steps.set_path.outputs.firmware_path }}
+          
+          # Optional: You can tag your builds with the git commit SHA
+          tag: ${{ github.sha }}
