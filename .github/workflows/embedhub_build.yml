@@ -90,8 +90,8 @@ jobs:
         uses: Embed-Hub/EmbedHub-GitHub-Action@master
         with:
           api-key: ${{ secrets.EMBEDHUB_KEY }}
-          organization: ${{ secrets.mahendra }}
-          project: ${{ secrets.makerville-badge-ms }}
+          organization: ${{ secrets.EMBEDHUB_ORG }}
+          project: ${{ secrets.EMBEDHUB_PROJECT }}
           files: 'project/build/zephyr/*_${{ github.sha }}.bin'
           path: 'releases/${{ steps.branch.outputs.name }}/'
           working-directory: '.'
